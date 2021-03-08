@@ -9,7 +9,7 @@ def create_tables():
 
     c.execute("""CREATE TABLE IF NOT EXISTS Products
                (barcode INTERGER PRIMARY KEY,name TEXT, price REAL)""")
-
+# ewrfw
     db.close()
 create_tables()
 
