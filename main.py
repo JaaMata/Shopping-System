@@ -1,32 +1,44 @@
 import sqlite3
 import barcodenumber
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import Column, Integer, String, Float, delete
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import UnmappedInstanceError
+
+engine = create_engine('sqlite:///database.db')
+Base = declarative_base()
 
 
-def create_tables():
-    db = sqlite3.connect("database.db")
-    c = db.cursor()
-
-    c.execute("""CREATE TABLE IF NOT EXISTS Stock
-             (barcode INTEGER PRIMARY KEY, amount INTEGER)""")
-
-    c.execute("""CREATE TABLE IF NOT EXISTS Products
-               (barcode INTEGER PRIMARY KEY,name TEXT, price REAL)""")
-    db.close()
+class Stock(Base):
+    __tablename__ = 'stock'
+    barcode = Column(Integer, primary_key=True, unique=True)
+    quantity = Column(Integer)
 
 
-create_tables()
+class Products(Base):
+    __tablename__ = 'products'
+    barcode = Column(Integer, primary_key=True, unique=True)
+    name = Column(String, nullable=False)
+    price = Column(Float, nullable=False)
 
 
-def check_sum(barcode):
+Base.metadata.create_all(engine)
+
+Session = sessionmaker(bind=engine)
+session = Session()
+
+
+def barcode_check(barcode):
+    return True
     return barcodenumber.check_code("ean13", str(barcode))
 
 
 def search_database(barcode):
-    if check_sum(barcode):
-        db = sqlite3.connect("database.db")
-        c = db.cursor()
-        c.execute(f"SELECT * FROM Products WHERE barcode = {barcode}")
-        data = c.fetchall()
+    if barcode_check:
+        result = session.query(Products).filter_by(barcode=barcode).first()
+        data = [result.barcode, result.name, result.price]
         return data
     return False
 
@@ -38,31 +50,34 @@ class Product:
         self.price = price
 
     def add_to_database(self):
-        if check_sum(self.barcode):
-            db = sqlite3.connect("database.db")
-            c = db.cursor()
-
-            c.execute("INSERT INTO Products VALUES(?,?,?)", (self.barcode, self.name, self.price))
-            c.execute("INSERT INTO Stock VALUES(?,?)", (self.barcode, 1))
-
-            db.commit()
-            db.close()
+        query = session.query(Products).filter_by(barcode=self.barcode).first()
+        if query == None:
+            if barcode_check(self.barcode):
+                product = Products(barcode=self.barcode, name=self.name, price=self.price)
+                session.add(product)
+                stock = Stock(barcode=self.barcode, quantity=1)
+                session.add(stock)
+                session.commit()
+                return True
         return False
 
     def delete_products(self):
-        db = sqlite3.connect("database.db")
-        c = db.cursor()
-        c.execute(f"DELETE FROM Products WHERE barcode = {self.barcode}")
-        c.execute(f"DELETE FROM Stock WHERE barcode = {self.barcode}")
-        db.commit()
-        db.close()
+        try:
+            query = session.query(Products).filter_by(barcode=self.barcode).first()
+            session.delete(query)
+            query = session.query(Stock).filter_by(barcode=self.barcode).first()
+            session.delete(query)
+            session.commit()
+        except UnmappedInstanceError:
+            session.commit()
+            return False
+        return True
 
     def check_stock(self):
-        db = sqlite3.connect("database.db")
-        c = db.cursor()
-        c.execute(f"SELECT * FROM Stock WHERE barcode = {self.barcode}")
-        data = c.fetchall()
-        return int(data[0][1])
+        query = session.query(Stock).filter_by(barcode=self.barcode).first()
+        if query == None:
+            return False
+        return query.quantity
 
     def set_stock(self, amount):
         db = sqlite3.connect("database.db")
@@ -101,7 +116,12 @@ class Product:
         db.close()
 
 
-# p1 = Product(5901234123457, "eggs", 2.00)
+p1 = Product(59134123457, "Milk", 4.00)
+
+
+
+#print(search_database(5901234123457))
+
 
 # print(p1.decrease_stock(17))
 
@@ -114,5 +134,6 @@ def print_all():
     print(c.fetchall())
     c.execute("SELECT * FROM Stock")
     print(c.fetchall())
+
 
 print_all()
