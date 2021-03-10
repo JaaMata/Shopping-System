@@ -129,5 +129,6 @@ def print_all():
 print_all()
 
 
-def genorate_barcode():
+def generate_barcode():
     pass
+    # This is the new problem!
