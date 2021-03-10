@@ -1,7 +1,6 @@
 import sqlite3
 import barcodenumber
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import Column, Integer, String, Float, delete
+from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -37,8 +36,8 @@ def barcode_check(barcode):
 
 def search_database(barcode):
     if barcode_check:
-        result = session.query(Products).filter_by(barcode=barcode).first()
-        data = [result.barcode, result.name, result.price]
+        query = session.query(Products).filter_by(barcode=barcode).first()
+        data = [query.barcode, query.name, query.price]
         return data
     return False
 
@@ -73,6 +72,21 @@ class Product:
             return False
         return True
 
+    def rename_barcode(self, new_barcode):
+        query = session.query(Products).filter_by(barcode=self.barcode).first()
+        query.barcode = new_barcode
+        session.commit()
+
+    def rename_product(self, new_name):
+        query = session.query(Products).filter_by(barcode=self.barcode).first()
+        query.name = new_name
+        session.commit()
+
+    def new_price(self, new_price):
+        query = session.query(Products).filter_by(barcode=self.barcode).first()
+        query.price = new_price
+        session.commit()
+
     def check_stock(self):
         query = session.query(Stock).filter_by(barcode=self.barcode).first()
         if query == None:
@@ -80,48 +94,25 @@ class Product:
         return query.quantity
 
     def set_stock(self, amount):
-        db = sqlite3.connect("database.db")
-        c = db.cursor()
-        c.execute(f"UPDATE Stock SET amount = {amount} WHERE barcode = {self.barcode}")
-        c.execute(f"SELECT * FROM Stock WHERE barcode = {self.barcode}")
-        data = c.fetchall()
-        db.commit()
-        db.close()
-        if data[0][1] == amount:
-            return True
-        return False
+        query = session.query(Stock).filter_by(barcode=self.barcode).first()
+        query.quantity = amount
+        session.commit()
 
     def increase_stock(self, increase_amount):
-        amount = self.check_stock()
-        db = sqlite3.connect("database.db")
-        c = db.cursor()
-        c.execute(f"UPDATE Stock SET amount = {amount + increase_amount} WHERE barcode = {self.barcode}")
-        c.execute(f"SELECT * FROM Stock WHERE barcode = {self.barcode}")
-        data = c.fetchall()
-        db.commit()
-        db.close()
-        if data[0][1] == amount + increase_amount:
-            return True
-        return False
+        query = session.query(Stock).filter_by(barcode=self.barcode).first()
+        query.quantity = query.quantity + increase_amount
+        session.commit()
 
     def decrease_stock(self, decreasing_amount):
-        amount = self.check_stock()
-        if amount - decreasing_amount < 0:
-            amount, decreasing_amount = 0, 0
-        db = sqlite3.connect("database.db")
-        c = db.cursor()
-        c.execute(f"UPDATE Stock SET amount = {amount - decreasing_amount} WHERE barcode = {self.barcode}")
-        c.execute(f"SELECT * FROM Stock WHERE barcode = {self.barcode}")
-        db.commit()
-        db.close()
-
+        query = session.query(Stock).filter_by(barcode=self.barcode).first()
+        query.quantity = query.quantity - decreasing_amount
+        if query.quantity < 0:
+            query.quantity = 0
+        session.commit()
 
 p1 = Product(59134123457, "Milk", 4.00)
 
-
-
-#print(search_database(5901234123457))
-
+# print(search_database(5901234123457))
 
 # print(p1.decrease_stock(17))
 
@@ -135,5 +126,8 @@ def print_all():
     c.execute("SELECT * FROM Stock")
     print(c.fetchall())
 
-
 print_all()
+
+
+def genorate_barcode():
+    pass
