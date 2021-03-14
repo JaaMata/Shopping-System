@@ -18,7 +18,7 @@ def getProductInfo(barcode):
     e_barcode.delete(0,100)
     global total
     #BASE = "http://0.0.0.0:8080/"  # For Replit
-    #BASE = "http://127.0.0.1:5000/"    # For Pycharm
+    BASE = "http://127.0.0.1:5000/"    # For Pycharm
     response = requests.get(BASE + "checkproduct?barcode=" + str(barcode))
     if response.json() == False:
         return messagebox.showerror(title="Product Error", message="Product Not Found !")
