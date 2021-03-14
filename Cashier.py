@@ -17,7 +17,8 @@ def clear():
 def getProductInfo(barcode):
     e_barcode.delete(0,100)
     global total
-    BASE = "http://127.0.0.1:5000/"
+    #BASE = "http://0.0.0.0:8080/"  # For Replit
+    #BASE = "http://127.0.0.1:5000/"    # For Pycharm
     response = requests.get(BASE + "checkproduct?barcode=" + str(barcode))
     if response.json() == False:
         return messagebox.showerror(title="Product Error", message="Product Not Found !")
@@ -38,34 +39,6 @@ def getProductInfo(barcode):
     p.config(text=p['text'] + str(f_price) + "\n")
     l_price.config(text=f_total)
     return price
-
-
-#
-# price = 0
-# print("Type Stop To Stop")
-# isTrue = False
-# while isTrue:
-#    barcode = str(input("Please Enter The Barcode :"))
-#
-#    if barcode.lower() == "stop":
-#        break
-#
-#    if barcode.isdigit() == True:
-#        data = getProductInfo(int(barcode))
-#        if data == False:
-#            print("The Barcode is invalid")
-#        else:
-#            price = + data['price']
-#    else:
-#        print("The Barcode is invalid")
-#
-# numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-#
-# if str(price)[-1] == "0" and str(price)[-2] == ".":
-#    price = "£" + str(price) + "0"
-#
-# print("Total = "+price)
-
 
 root = Tk()
 
