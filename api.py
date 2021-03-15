@@ -67,87 +67,90 @@ class Product:
         session.close()
         return False
 
-    def delete_products(self):
-        try:
-            Session = sessionmaker(bind=engine)
-            session = Session()
-            query = session.query(Products).filter_by(barcode=self.barcode).first()
-            session.delete(query)
-            session.commit()
-        except UnmappedInstanceError:
-            session.commit()
-            session.close()
-            return False
-        session.close()
-        return True
-
-    def rename_barcode(self, new_barcode):
+def delete_products(barcode):
+    try:
         Session = sessionmaker(bind=engine)
         session = Session()
-        query = session.query(Products).filter_by(barcode=self.barcode).first()
-        query.barcode = new_barcode
+        query = session.query(Products).filter_by(barcode=barcode).first()
+        session.delete(query)
+        session.commit()
+    except UnmappedInstanceError:
         session.commit()
         session.close()
+        return False
+    session.close()
+    return True
 
-    def rename_product(self, new_name):
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        query = session.query(Products).filter_by(barcode=self.barcode).first()
-        query.name = new_name
-        session.commit()
-        session.close()
+def rename_barcode(barcode, new_barcode):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(Products).filter_by(barcode=barcode).first()
+    query.barcode = new_barcode
+    session.commit()
+    session.close()
 
-    def new_price(self, new_price):
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        query = session.query(Products).filter_by(barcode=self.barcode).first()
-        query.price = new_price
-        session.commit()
-        session.close()
+def rename_product(barcode, new_name):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(Products).filter_by(barcode=barcode).first()
+    query.name = new_name
+    session.commit()
+    session.close()
 
-    def check_stock(self):
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        query = session.query(Product).filter_by(barcode=self.barcode).first()
-        session.close()
-        if query == None:
-            return False
-        return query.quantity
+def new_price(barcode, new_price):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(Products).filter_by(barcode=barcode).first()
+    query.price = new_price
+    session.commit()
+    session.close()
 
-    def set_stock(self, amount):
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        query = session.query(Product).filter_by(barcode=self.barcode).first()
-        query.quantity = amount
-        session.commit()
-        session.close()
+def check_stock(barcode):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(Products).filter_by(barcode=barcode).first()
+    session.close()
+    if query == None:
+        return False
+    data = {"quantity" : query.quantity}
+    return data
 
-    def increase_stock(self, increase_amount):
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        query = session.query(Product).filter_by(barcode=self.barcode).first()
-        query.quantity = query.quantity + increase_amount
-        session.commit()
-        session.close()
 
-    def decrease_stock(self, decreasing_amount):
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        query = session.query(Product).filter_by(barcode=self.barcode).first()
-        query.quantity = query.quantity - decreasing_amount
-        if query.quantity < 0:
-            query.quantity = 0
-        session.commit()
-        session.close()
+def set_stock(barcode, amount):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(Products).filter_by(barcode=barcode).first()
+    query.quantity = amount
+    session.commit()
+    session.close()
 
+def increase_stock(barcode, increase_amount):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(Products).filter_by(barcode=barcode).first()
+    query.quantity = query.quantity + increase_amount
+    session.commit()
+    session.close()
+
+def decrease_stock(barcode, decreasing_amount):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(Products).filter_by(barcode=barcode).first()
+    query.quantity = query.quantity - decreasing_amount
+    if query.quantity < 0:
+        query.quantity = 0
+    session.commit()
+    session.close()
 
 barcodes = []
 names = ["Eggs", "Milk", "Bread", "Ice cream", "Flour", "Tea Bags", "Rat Poison", "Chocolate", "", ""]
 prices = [4.50, 3.25, 6.42, 10.00, 3.00, 2.40, 0.99, 4.30, 5.00,6.00]
 
 
-for i in range(10):
-    p1 = Product(59134123457, "Milk", 4.00)
+#for i in range(10):
+#    
+p1 = Product(5901234123457, "Milk", 4.00, 3)
+p1.add_to_database()
 
 
 # print(search_database(5901234123457))
@@ -167,14 +170,12 @@ def product_get_all():
         tempData["name"] = i[1]
         tempData["barcode"] = i[0]
         tempData["price"] = i[2]
+        tempData["stock"] = i[3]
 
         data[i[0]] = tempData
         tempData = {}
 
     return data
-
-
-product_get_all()
 
 
 def generate_barcode():
@@ -190,6 +191,12 @@ product_put_args.add_argument("barcode", type=int, help="Missing Barcode", requi
 product_put_args.add_argument("name", type=str, help="Missing Name", required=True)
 product_put_args.add_argument("price", type=float, help="Missing Price", required=True)
 
+class Home(Resource):
+    def get(self):
+        return "Welcome to the shopping system Api"
+
+api.add_resource(Home, "/")
+
 
 class Product(Resource):
     def get(self, barcode):
@@ -201,14 +208,21 @@ class Product(Resource):
 
 api.add_resource(Product, "/product/<int:barcode>")
 
+class Product_Stock(Resource):
+    def get(self,  barcode):
+        return check_stock(barcode)
+
+
+api.add_resource(Product_Stock, "/product/stock/<int:barcode>")
+
 
 class Product_all(Resource):
-    def get(self):  #
+    def get(self):
         return product_get_all()
 
 
 api.add_resource(Product_all, "/product/all")
 
 if __name__ == "__main__":
-    # app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
-    app.run(debug=True)  # For Pycharm
+    app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
+    #app.run(debug=True)  # For Pycharm
