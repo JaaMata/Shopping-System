@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_restful import Api, Resource, reqparse
 from threading import Thread
 import sqlite3
@@ -150,7 +150,6 @@ prices = [4.50, 3.25, 6.42, 10.00, 3.00, 2.40, 0.99, 4.30, 5.00,6.00]
 #for i in range(10):
 #    
 p1 = Product(5901234123457, "Milk", 4.00, 3)
-p1.add_to_database()
 
 
 # print(search_database(5901234123457))
@@ -202,11 +201,16 @@ class Product(Resource):
     def get(self, barcode):
         return search_database(barcode=barcode)
 
-    def put(self):
-        pass
-
-
 api.add_resource(Product, "/product/<int:barcode>")
+
+class Product_add(Resource):
+    def post(self):
+        args = product_put_args.parse_args()
+        product = Product(args['barcode'], args['name'], args['price'], args['quantity'])
+        product.add_to_database()
+        
+api.add_resource(Product_add, "/product/add")
+
 
 class Product_Stock(Resource):
     def get(self,  barcode):

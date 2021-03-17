@@ -1,9 +1,7 @@
 import requests
 
-BASE = "http://127.0.0.1:5000/"
+data = {"barcode" : 5901234123457, "name" : "Paper", "price" : 0.05, "quantity" : 49}
 
-response = requests.get(BASE + "product/5901234123457")
-print(response.json())
+BASE = "https://Shopping-System-2.17wilsjam.repl.co/"
 
-response = requests.get(BASE + "product/all")
-print(response.json())
+response = requests.post(BASE + "/product/add" , data)
