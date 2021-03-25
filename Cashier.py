@@ -2,7 +2,7 @@ import requests
 from tkinter import *
 from tkinter import messagebox
 
-total = 0
+total = 0.0
 
 def clear():
     global total
@@ -10,15 +10,15 @@ def clear():
     b.config(text="Barcode:\n")
     n.config(text="Name:\n")
     p.config(text="Price:\n")
-    l_price.config(text="Total:\n")
+    l_price.config(text="")
     e_barcode.delete(1)
 
 
 def getProductInfo(barcode):
     e_barcode.delete(0,100)
     global total
-    BASE = "https://Shopping-System-3.17wilsjam.repl.co/"  # For Replit
-    #BASE = "http://127.0.0.1:5000/"    # For Pycharm
+    #BASE = "https://Shopping-System-3.17wilsjam.repl.co/"  # For Replit
+    BASE = "http://127.0.0.1:5000/"    # For Pycharm
     response = requests.get(BASE + "product/" + str(barcode))
     if response.json() == False:
         return messagebox.showerror(title="Product Error", message="Product Not Found !")
@@ -27,17 +27,19 @@ def getProductInfo(barcode):
     barcode = data['barcode']
     name = data['name']
     price = data['price']
-    total += price
-    print(total)
+    total += float(price)
     b.config(text=b['text'] + str(barcode) + "\n")
     n.config(text=n['text'] + str(name) + "\n")
+
+    price = "£" + str(price)
     if str(price)[-1] == "0" and str(price)[-2] == ".":
-        f_price = "£" + str(price) + "0"
+        price = str(price) + "0"
+        p.config(text=p['text'] + str(price) + "\n")
+
+    total = "£" + str(total)
     if str(total)[-1] == "0" and str(total)[-2] == ".":
-        f_total = "£" + str(total) + "0"
-    print(f_price)
-    p.config(text=p['text'] + str(f_price) + "\n")
-    l_price.config(text=f_total)
+        f_total = str(total) + "0"
+        l_price.config(text=f_total)
     return price
 
 root = Tk()
@@ -55,9 +57,12 @@ Button(root, text="Clear", command=clear).grid(column=3,row=3)
 
 b = Label(root, text="Barcode:\n")
 b.grid(column=1, row=4)
+
 n = Label(root, text="Name:\n")
 n.grid(column=2, row=4)
+
 p = Label(root, text="Price:\n")
 p.grid(column=3, row=4)
+
 if __name__ == "__main__":
     root.mainloop()
