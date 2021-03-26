@@ -57,7 +57,8 @@ class Product:
         Session = sessionmaker(bind=engine)
         session = Session()
         query = session.query(Products).filter_by(barcode=self.barcode).first()
-        if query == None:
+
+        if query is None:
             if barcodeCheck(self.barcode):
                 product = Products(barcode=self.barcode, name=self.name, price=self.price, quantity=self.quantity)
                 session.add(product)
@@ -75,7 +76,7 @@ def deleteProducts(barcode):
         Session = sessionmaker(bind=engine)
         session = Session()
         query = session.query(Products).filter_by(barcode=barcode).first()
-        if query == None:
+        if query is None:
             return False
         session.delete(query)
         session.commit()
@@ -92,7 +93,7 @@ def renameBarcode(barcode, new_barcode):
         Session = sessionmaker(bind=engine)
         session = Session()
         query = session.query(Products).filter_by(barcode=barcode).first()
-        if query == None:
+        if query is None:
             return False
         query.barcode = new_barcode
         session.commit()
@@ -105,7 +106,7 @@ def renameProduct(barcode, new_name):
     Session = sessionmaker(bind=engine)
     session = Session()
     query = session.query(Products).filter_by(barcode=barcode).first()
-    if query == None:
+    if query is None:
         return False
     query.name = new_name
     session.commit()
@@ -116,7 +117,7 @@ def newPrice(barcode, new_price):
     Session = sessionmaker(bind=engine)
     session = Session()
     query = session.query(Products).filter_by(barcode=barcode).first()
-    if query == None:
+    if query is None:
         return False
     query.price = new_price
     session.commit()
@@ -128,7 +129,7 @@ def checkStock(barcode):
     session = Session()
     query = session.query(Products).filter_by(barcode=barcode).first()
     session.close()
-    if query == None:
+    if query is None:
         return False
     data = {"quantity": query.quantity}
     return data
@@ -139,7 +140,7 @@ def setStock(barcode, amount):
         Session = sessionmaker(bind=engine)
         session = Session()
         query = session.query(Products).filter_by(barcode=barcode).first()
-        if query == None:
+        if query is None:
             return False
         query.quantity = amount
         session.commit()
@@ -155,7 +156,7 @@ def increaseStock(barcode, increase_amount):
         Session = sessionmaker(bind=engine)
         session = Session()
         query = session.query(Products).filter_by(barcode=barcode).first()
-        if query == None:
+        if query is None:
             return False
         query.quantity = query.quantity + increase_amount
         session.commit()
@@ -280,7 +281,7 @@ class productStock(Resource):
             increaseStock(barcode, args['quantity'])
         if args['operation'] == "decrease":
             decreaseStock(barcode, args['quantity'])
-        return productSearch(barcode)
+        return searchDatabase(barcode)
 
 
 api.add_resource(productStock, "/product/stock/<int:barcode>")
