@@ -3,7 +3,8 @@ import requests
 
 
 def get_Stats():
-    BASE = "http://127.0.0.1:5000/"
+    BASE = "https://Shopping-System-3.17wilsjam.repl.co"
+    #BASE = "http://127.0.0.1:5000/"
     response = requests.get(BASE + "/product/all")
     data = response.json()
     print(data)
@@ -36,7 +37,8 @@ def addProduct():
             package["quantity"] = userInput
             break
 
-    BASE = "http://127.0.0.1:5000/"
+    BASE = "https://Shopping-System-3.17wilsjam.repl.co"
+    #BASE = "http://127.0.0.1:5000/"
     response = requests.post(BASE + "/product/add", package)
 
     return package
@@ -48,7 +50,8 @@ get_Stats()
 def stock():
     print("1 for set\n2 for increase\n3 for decrease")
     userInput = str(input("Enter a Number"))
-    BASE = "http://127.0.0.1:5000/"
+    BASE = "https://Shopping-System-3.17wilsjam.repl.co"
+    #BASE = "http://127.0.0.1:5000/"
 
     if userInput == "1":
         try:

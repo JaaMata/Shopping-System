@@ -1,8 +1,8 @@
-from flask import Flask, request, jsonify
+from math import ceil
+from random import randint
+from flask import Flask
 from flask_restful import Api, Resource, reqparse
-from threading import Thread
 import sqlite3
-import barcodenumber
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
@@ -11,7 +11,6 @@ from sqlalchemy.orm.exc import UnmappedInstanceError
 
 engine = create_engine('sqlite:///database.db')
 Base = declarative_base()
-
 
 class Products(Base):
     __tablename__ = 'products'
@@ -22,19 +21,11 @@ class Products(Base):
 
 
 Base.metadata.create_all(engine)
-
 Session = sessionmaker(bind=engine)
 session = Session()
 
-
-def barcodeCheck(barcode):
-    if barcodenumber.check_code("ean13", str(barcode)):
-        return True
-    return False
-
-
 def searchDatabase(barcode):
-    if barcodeCheck(barcode):
+    if checkBarcode(barcode):
         Session = sessionmaker(bind=engine)
         session = Session()
         query = session.query(Products).filter_by(barcode=barcode).first()
@@ -44,6 +35,51 @@ def searchDatabase(barcode):
         session.close()
         return data
     return False
+
+def generateBarcode():
+    barcode = ""
+    for i in range(7):
+        barcode = barcode + str(randint(0,9))
+    lst = []
+    checkNum = [3,1,3,1,3,1,3]
+    total = 0 
+    for i in barcode:
+        lst.append(i)
+
+    for i in range(7):
+        total = total + int(lst[i]) * checkNum[i]
+        
+    roundedTotal = ceil(int(total) / 10.0) * 10
+    checkDigit = roundedTotal - total
+
+    barcode = int(barcode + str(checkDigit))
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(Products).filter_by(barcode=barcode).first()
+    if query == None:
+        return barcode
+    else:
+        generateBarcode()
+
+def checkBarcode(barcode):
+    checkDigit = str(barcode)[-1]
+    lst = []
+    checkNum = [3,1,3,1,3,1,3]
+    total = 0 
+    for i in str(barcode):
+        lst.append(i)
+
+    for i in range(7):
+        total = total + int(lst[i]) * checkNum[i]
+        
+    roundedTotal = ceil(int(total) / 10.0) * 10
+    total = roundedTotal - total
+    
+    if int(total) == int(checkDigit):
+        return True
+    else:
+        return False
 
 
 class Product:
@@ -59,7 +95,7 @@ class Product:
         query = session.query(Products).filter_by(barcode=self.barcode).first()
 
         if query is None:
-            if barcodeCheck(self.barcode):
+            if checkBarcode(self.barcode):
                 product = Products(barcode=self.barcode, name=self.name, price=self.price, quantity=self.quantity)
                 session.add(product)
                 session.commit()
@@ -67,9 +103,6 @@ class Product:
                 return True
         session.close()
         return False
-
-
-
 
 def deleteProducts(barcode):
     try:
@@ -87,9 +120,8 @@ def deleteProducts(barcode):
     session.close()
     return True
 
-
 def renameBarcode(barcode, new_barcode):
-    if barcodeCheck(new_barcode):
+    if checkBarcode(new_barcode):
         Session = sessionmaker(bind=engine)
         session = Session()
         query = session.query(Products).filter_by(barcode=barcode).first()
@@ -101,7 +133,6 @@ def renameBarcode(barcode, new_barcode):
         return True
     return False
 
-
 def renameProduct(barcode, new_name):
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -111,7 +142,6 @@ def renameProduct(barcode, new_name):
     query.name = new_name
     session.commit()
     session.close()
-
 
 def newPrice(barcode, new_price):
     Session = sessionmaker(bind=engine)
@@ -123,7 +153,6 @@ def newPrice(barcode, new_price):
     session.commit()
     session.close()
 
-
 def checkStock(barcode):
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -133,7 +162,6 @@ def checkStock(barcode):
         return False
     data = {"quantity": query.quantity}
     return data
-
 
 def setStock(barcode, amount):
     try:
@@ -150,7 +178,6 @@ def setStock(barcode, amount):
     else:
         return True
 
-
 def increaseStock(barcode, increase_amount):
     try:
         Session = sessionmaker(bind=engine)
@@ -165,7 +192,6 @@ def increaseStock(barcode, increase_amount):
         return False
     else:
         return True
-
 
 def decreaseStock(barcode, decreasing_amount):
     try:
@@ -183,22 +209,6 @@ def decreaseStock(barcode, decreasing_amount):
         return False
     else:
         return True
-
-
-barcodes = []
-names = ["Eggs", "Milk", "Bread", "Ice cream", "Flour", "Tea Bags", "Rat Poison", "Chocolate", "", ""]
-prices = [4.50, 3.25, 6.42, 10.00, 3.00, 2.40, 0.99, 4.30, 5.00, 6.00]
-
-
-# for i in range(10):
-#    
-# p1 = Product(5901234123457, "Milk", 4.00, 3)
-
-# print(search_database(5901234123457))
-
-# print(p1.decrease_stock(17))
-
-# print(p1.increase_stock(17))
 
 def productGetAll():
     db = sqlite3.connect("database.db")
@@ -219,10 +229,16 @@ def productGetAll():
     return data
 
 
-def generateBarcode():
-    pass
-    # This is the new problem!
 
+# for i in range(10):
+#    
+# p1 = Product(5901234123457, "Milk", 4.00, 3)
+
+# print(search_database(5901234123457))
+
+# print(p1.decrease_stock(17))
+
+# print(p1.increase_stock(17))
 
 app = Flask(__name__)
 api = Api(app)
@@ -244,7 +260,7 @@ class productSearch(Resource):
 api.add_resource(productSearch, "/product/<int:barcode>")
 
 product_post_args = reqparse.RequestParser()
-product_post_args.add_argument("barcode", type=int, help="Missing Barcode", required=True)
+product_post_args.add_argument("barcode", type=str, help="Missing Barcode", required=True)
 product_post_args.add_argument("name", type=str, help="Missing Name", required=True)
 product_post_args.add_argument("price", type=float, help="Missing Price", required=True)
 product_post_args.add_argument("quantity", type=int, help="Missing Quantity", required=True)
@@ -253,7 +269,11 @@ product_post_args.add_argument("quantity", type=int, help="Missing Quantity", re
 class productAdd(Resource):
     def post(self):
         args = product_post_args.parse_args()
-        barcode = args['barcode']
+
+        if args['barcode'] == "gen":
+            barcode = int(generateBarcode())
+        else:
+            barcode = int(args['barcode'])
         name = args['name']
         price = args['price']
         quantity = args['quantity']
@@ -301,5 +321,5 @@ class productAll(Resource):
 api.add_resource(productAll, "/product/all")
 
 if __name__ == "__main__":
-    # app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
-    app.run(debug=True)  # For Pycharm
+    app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
+    #app.run(debug=True)  # For Pycharm
