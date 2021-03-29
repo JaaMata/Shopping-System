@@ -3,6 +3,7 @@ import requests
 from time import sleep
 
 BASE = "https://Shopping-System-3.17wilsjam.repl.co"
+BASE = "http://127.0.0.1:5000/"
 
 names = ["Eggs", "Milk", "Bread", "Ice cream", "Flour", "Tea Bags", "Rat Poison", "Chocolate", "Steak", "Pork"]
 

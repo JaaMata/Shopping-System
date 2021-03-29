@@ -29,7 +29,7 @@ def searchDatabase(barcode):
         Session = sessionmaker(bind=engine)
         session = Session()
         query = session.query(Products).filter_by(barcode=barcode).first()
-        if query == None:
+        if query is None:
             return False
         data = {"barcode": query.barcode, "name": query.name, "price": query.price}
         session.close()
@@ -57,6 +57,7 @@ def generateBarcode():
     Session = sessionmaker(bind=engine)
     session = Session()
     query = session.query(Products).filter_by(barcode=barcode).first()
+    session.close()
     if query == None:
         return barcode
     else:
@@ -80,6 +81,16 @@ def checkBarcode(barcode):
         return True
     else:
         return False
+
+
+def queryDatabase(barcode):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    query = session.query(Products).filter_by(barcode=barcode).first()
+    if query is None:
+        return False
+    else:
+        return query
 
 
 class Product:
@@ -143,7 +154,7 @@ def renameProduct(barcode, new_name):
     session.commit()
     session.close()
 
-def newPrice(barcode, new_price):
+def renamePrice(barcode, new_price):
     Session = sessionmaker(bind=engine)
     session = Session()
     query = session.query(Products).filter_by(barcode=barcode).first()
@@ -228,18 +239,6 @@ def productGetAll():
 
     return data
 
-
-
-# for i in range(10):
-#    
-# p1 = Product(5901234123457, "Milk", 4.00, 3)
-
-# print(search_database(5901234123457))
-
-# print(p1.decrease_stock(17))
-
-# print(p1.increase_stock(17))
-
 app = Flask(__name__)
 api = Api(app)
 
@@ -288,7 +287,6 @@ product_stock_put_args = reqparse.RequestParser()
 product_stock_put_args.add_argument("quantity", type=int, help="Missing quantity", required=True)
 product_stock_put_args.add_argument("operation", type=str, help="Missing operation", required=True)
 
-
 class productStock(Resource):
     def get(self, barcode):
         return checkStock(barcode)
@@ -306,6 +304,23 @@ class productStock(Resource):
 
 api.add_resource(productStock, "/product/stock/<int:barcode>")
 
+productEditPutArgs = reqparse.RequestParser()
+productEditPutArgs.add_argument("barcode")
+productEditPutArgs.add_argument("name")
+productEditPutArgs.add_argument("price")
+
+
+class productEdit(Resource):
+    def put(self,barcode):
+        args = productEditPutArgs.parse_args()
+        if args['barcode'] != [""]:
+            renameBarcode(barcode, )
+
+
+
+
+api.add_resource(productEdit, "/product/edit/<int:barcode>")
+
 class productDelete(Resource):
     def delete(self, barcode):
         productDelete(barcode)
@@ -321,5 +336,5 @@ class productAll(Resource):
 api.add_resource(productAll, "/product/all")
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
-    #app.run(debug=True)  # For Pycharm
+    #app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
+    app.run(debug=True)  # For Pycharm
