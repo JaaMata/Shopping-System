@@ -232,7 +232,7 @@ def productGetAll():
         tempData["name"] = i[1]
         tempData["barcode"] = i[0]
         tempData["price"] = i[2]
-        tempData["stock"] = i[3]
+        tempData["quantity"] = i[3]
 
         data[i[0]] = tempData
         tempData = {}
@@ -336,5 +336,6 @@ class productAll(Resource):
 api.add_resource(productAll, "/product/all")
 
 if __name__ == "__main__":
-    #app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
-    app.run(debug=True)  # For Pycharm
+    pass
+    app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
+    #app.run(debug=True)  # For Pycharm
