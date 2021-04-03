@@ -8,6 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import UnmappedInstanceError
+from Barcodes import barcodeImageGen
 
 engine = create_engine('sqlite:///database.db')
 Base = declarative_base()
@@ -111,6 +112,7 @@ class Product:
                 session.add(product)
                 session.commit()
                 session.close()
+                barcodeImageGen.barcodeImageGenerator(self.name,self.barcode)
                 return True
         session.close()
         return False
@@ -185,9 +187,9 @@ def setStock(barcode, amount):
         session.commit()
         session.close()
     except:
-        return False
+        return "500"
     else:
-        return True
+        return "200"
 
 def increaseStock(barcode, increase_amount):
     try:
@@ -195,14 +197,14 @@ def increaseStock(barcode, increase_amount):
         session = Session()
         query = session.query(Products).filter_by(barcode=barcode).first()
         if query is None:
-            return False
+            return "404"
         query.quantity = query.quantity + increase_amount
         session.commit()
         session.close()
     except:
-        return False
+        return "500"
     else:
-        return True
+        return "200"
 
 def decreaseStock(barcode, decreasing_amount):
     try:
@@ -210,16 +212,16 @@ def decreaseStock(barcode, decreasing_amount):
         session = Session()
         query = session.query(Products).filter_by(barcode=barcode).first()
         if query == None:
-            return False
+            return "404"
         query.quantity = query.quantity - decreasing_amount
         if query.quantity < 0:
             query.quantity = 0
         session.commit()
         session.close()
     except:
-        return False
+        return "500"
     else:
-        return True
+        return "200"
 
 def productGetAll():
     db = sqlite3.connect("database.db")
@@ -294,12 +296,12 @@ class productStock(Resource):
     def put(self, barcode):
         args = product_stock_put_args.parse_args()
         if args['operation'] == "set":
-            setStock(barcode, args['quantity'])
+            return setStock(barcode, args['quantity'])
         if args['operation'] == "increase":
-            increaseStock(barcode, args['quantity'])
+            return increaseStock(barcode, args['quantity'])
         if args['operation'] == "decrease":
-            decreaseStock(barcode, args['quantity'])
-        return searchDatabase(barcode)
+            return decreaseStock(barcode, args['quantity'])
+        return "400"
 
 
 api.add_resource(productStock, "/product/stock/<int:barcode>")
@@ -315,9 +317,6 @@ class productEdit(Resource):
         args = productEditPutArgs.parse_args()
         if args['barcode'] != [""]:
             renameBarcode(barcode, )
-
-
-
 
 api.add_resource(productEdit, "/product/edit/<int:barcode>")
 
@@ -337,5 +336,5 @@ api.add_resource(productAll, "/product/all")
 
 if __name__ == "__main__":
     pass
-    app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
-    #app.run(debug=True)  # For Pycharm
+    #app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
+    app.run(debug=True)  # For Pycharm
