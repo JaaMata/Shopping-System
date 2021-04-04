@@ -1,18 +1,17 @@
 import requests
-from Barcodes import BarcodeScaner
-import cv2  # Read image / camera
+import pathlib
+import cv2
 from pyzbar.pyzbar import decode
+from time import sleep
 
-from Barcodes.BarcodeScaner import barcodeScanner
 
+def buyProduct(barcode):
 
-def buyProduct(barcode, quantity):
     # BASE = "https://Shopping-System-3.17wilsjam.repl.co"
     BASE = "http://127.0.0.1:5000/"
-    package = {'operation' : 'decrease'}
-    package['quantity'] = int(quantity)
+    package = {'operation': 'decrease', 'quantity': 1}
     response = requests.put(BASE + f"/product/stock/{int(barcode)}", package)
-
+    getAll()
     if response.json() == "404":
         return "Invalid Barcode"
     if response.json() == "200":
@@ -22,37 +21,53 @@ def buyProduct(barcode, quantity):
     if not response.json():
         return "Something Went Wrong"
 
+#def manualBarcodeScanner(name):
+#    path = pathlib.Path(name + ".png")  # Need to link this to Barcode not the main file
+#    if path.exists():
+#        img = cv2.imread(f"{str(name)}.png")
+#        for code in decode(img):
+#            barcodeNumber = code.data.decode('utf-8')
+#        return barcodeNumber
+#    else:
+#        return False
+
+
+def webCameraScanner():
+    cap = cv2.VideoCapture(0)
+    cap.set(3, 640)
+    cap.set(4, 480)
+
+    while True:
+        success, img = cap.read()
+        for barcode in decode(img):
+            barcodeNumber = barcode.data.decode('utf-8')
+            print(buyProduct(barcodeNumber))
+        cv2.imshow('Result', img)
+        cv2.waitKey(1)
+
+
 def getAll():
-   #BASE = "https://Shopping-System-3.17wilsjam.repl.co"
-   BASE = "http://127.0.0.1:5000/"
-   response = requests.get(BASE + "/product/all")
-   response = response.json()
+    # BASE = "https://Shopping-System-3.17wilsjam.repl.co"
+    BASE = "http://127.0.0.1:5000/"
+    response = requests.get(BASE + "/product/all")
+    response = response.json()
 
-   for i in response:
-       name = response[i]['name']
-       barcode = response[i]['barcode']
-       price = response[i]['price']
-       quantity = response[i]['quantity']
+    for i in response:
+        name = response[i]['name']
+        barcode = response[i]['barcode']
+        price = response[i]['price']
+        quantity = response[i]['quantity']
 
-       print(f"Name : {name}\nBarcode : {barcode}\nPrice : {price}\nQuantity : {quantity}\n")
+        print(f"Name : {name}\nBarcode : {barcode}\nPrice : {price}\nQuantity : {quantity}\n")
+
 
 getAll()
 
 
+#userInput = str(input("Press 1 for manual\n2 For automatic"))
+#if userInput == "1":
+#    manualBarcodeScanner()
+#elif userInput == "2":
+#    webCameraScanner()
 
-
-while True:
-   productName = str(input("Please Enter the Name of the Product You Would Like To Buy : "))
-   if productName != "":
-       break
-
-if barcodeScanner(productName) != False:
-    while True:
-        try:
-            userProduct = int(input("Please Enter the Quantity of the Product You Would Like To Buy : "))
-        except ValueError:
-            print("Please only use numbers")
-        else:
-            buyProduct(productName, userProduct)
-            break
-
+webCameraScanner()

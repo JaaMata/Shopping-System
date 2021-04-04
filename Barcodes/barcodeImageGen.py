@@ -1,7 +1,7 @@
 import requests
 from barcode import EAN8
 from barcode.writer import ImageWriter
-import os, shutil
+import shutil
 
 
 def barcodeImageGenerator(name, barcodeNumber):

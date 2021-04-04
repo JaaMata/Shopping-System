@@ -9,6 +9,18 @@ def get_Stats():
     data = response.json()
     print(data)
 
+cap = cv2.VideoCapture(0)
+cap.set(3,640)
+cap.set(4,480)
+
+while True:
+    success, img = cap.read()
+    for barcode in decode(img):
+        barcodeNumber = barcode.data.decode('utf-8')
+        print(barcodeNumber)
+
+    cv2.imshow('Result', img)
+    cv2.waitKey(1)
 
 def addProduct():
     # Product Model {"barcode" : barcode, "name" : name, "price" : price, "quantity" : quantity}
