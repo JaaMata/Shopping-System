@@ -1,49 +1,7 @@
 import requests
-import pathlib
 import cv2
 from pyzbar.pyzbar import decode
 from time import sleep
-
-
-def buyProduct(barcode):
-
-    # BASE = "https://Shopping-System-3.17wilsjam.repl.co"
-    BASE = "http://127.0.0.1:5000/"
-    package = {'operation': 'decrease', 'quantity': 1}
-    response = requests.put(BASE + f"/product/stock/{int(barcode)}", package)
-    getAll()
-    if response.json() == "404":
-        return "Invalid Barcode"
-    if response.json() == "200":
-        return "Item Bought"
-    if response.json() == "500":
-        return "Server Side Error"
-    if not response.json():
-        return "Something Went Wrong"
-
-#def manualBarcodeScanner(name):
-#    path = pathlib.Path(name + ".png")  # Need to link this to Barcode not the main file
-#    if path.exists():
-#        img = cv2.imread(f"{str(name)}.png")
-#        for code in decode(img):
-#            barcodeNumber = code.data.decode('utf-8')
-#        return barcodeNumber
-#    else:
-#        return False
-
-
-def webCameraScanner():
-    cap = cv2.VideoCapture(0)
-    cap.set(3, 640)
-    cap.set(4, 480)
-
-    while True:
-        success, img = cap.read()
-        for barcode in decode(img):
-            barcodeNumber = barcode.data.decode('utf-8')
-            print(buyProduct(barcodeNumber))
-        cv2.imshow('Result', img)
-        cv2.waitKey(1)
 
 
 def getAll():
@@ -61,13 +19,64 @@ def getAll():
         print(f"Name : {name}\nBarcode : {barcode}\nPrice : {price}\nQuantity : {quantity}\n")
 
 
-getAll()
+def getInfo(barcode):
+    # BASE = "https://Shopping-System-3.17wilsjam.repl.co"
+    BASE = "http://127.0.0.1:5000/"
+    response = requests.get(BASE + f"/product/{int(barcode)}")
+    response = response.json()
+    return response
 
 
-#userInput = str(input("Press 1 for manual\n2 For automatic"))
-#if userInput == "1":
-#    manualBarcodeScanner()
-#elif userInput == "2":
-#    webCameraScanner()
+def printReceipt(barcodes):
+    receipt = ""
+    for i in barcodes:
+        data = getInfo(i)
+        tempData = f"{data['barcode']}   {data['name']}  {data['price']}\n"
+        receipt = receipt + tempData
+    print(receipt)
 
-webCameraScanner()
+
+def buyProduct(barcode):
+    # BASE = "https://Shopping-System-3.17wilsjam.repl.co"
+    BASE = "http://127.0.0.1:5000/"
+    package = {'operation': 'decrease', 'quantity': 1}
+    response = requests.put(BASE + f"/product/stock/{int(barcode)}", package)
+    if response.json() == "404":
+        return "Invalid Barcode"
+    if response.json() == "200":
+        return "Item Bought"
+    if response.json() == "500":
+        return "Server Side Error"
+    if not response.json():
+        return "Something Went Wrong"
+
+
+def breakLoop(x=None):
+    if x != None:
+        return True
+
+
+barcodes = []
+
+x = 1
+
+cap = cv2.VideoCapture(0)
+cap.set(3, 640)
+cap.set(4, 480)
+
+while x == 1:
+    success, img = cap.read()
+    for barcode in decode(img):
+        barcodeNumber = barcode.data.decode('utf-8')
+        barcodes.append(barcodeNumber)
+        print(buyProduct(barcodeNumber))
+        userInput = str(input("Press Enter to scan another product"))
+        if userInput != "":
+            x = 2
+            break
+    cv2.imshow('Result', img)
+    cv2.waitKey(1)
+
+print(barcodes)
+
+printReceipt(barcodes)

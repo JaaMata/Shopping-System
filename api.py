@@ -13,6 +13,7 @@ from Barcodes import barcodeImageGen
 engine = create_engine('sqlite:///database.db')
 Base = declarative_base()
 
+
 class Products(Base):
     __tablename__ = 'products'
     barcode = Column(Integer, primary_key=True, unique=True)
@@ -24,6 +25,7 @@ class Products(Base):
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
+
 
 def searchDatabase(barcode):
     if checkBarcode(barcode):
@@ -37,19 +39,20 @@ def searchDatabase(barcode):
         return data
     return False
 
+
 def generateBarcode():
     barcode = ""
     for i in range(7):
-        barcode = barcode + str(randint(0,9))
+        barcode = barcode + str(randint(0, 9))
     lst = []
-    checkNum = [3,1,3,1,3,1,3]
-    total = 0 
+    checkNum = [3, 1, 3, 1, 3, 1, 3]
+    total = 0
     for i in barcode:
         lst.append(i)
 
     for i in range(7):
         total = total + int(lst[i]) * checkNum[i]
-        
+
     roundedTotal = ceil(int(total) / 10.0) * 10
     checkDigit = roundedTotal - total
 
@@ -64,20 +67,21 @@ def generateBarcode():
     else:
         generateBarcode()
 
+
 def checkBarcode(barcode):
     checkDigit = str(barcode)[-1]
     lst = []
-    checkNum = [3,1,3,1,3,1,3]
-    total = 0 
+    checkNum = [3, 1, 3, 1, 3, 1, 3]
+    total = 0
     for i in str(barcode):
         lst.append(i)
 
     for i in range(7):
         total = total + int(lst[i]) * checkNum[i]
-        
+
     roundedTotal = ceil(int(total) / 10.0) * 10
     total = roundedTotal - total
-    
+
     if int(total) == int(checkDigit):
         return True
     else:
@@ -112,10 +116,11 @@ class Product:
                 session.add(product)
                 session.commit()
                 session.close()
-                barcodeImageGen.barcodeImageGenerator(self.name,self.barcode)
+                barcodeImageGen.barcodeImageGenerator(self.name, self.barcode)
                 return True
         session.close()
         return False
+
 
 def deleteProducts(barcode):
     try:
@@ -133,6 +138,7 @@ def deleteProducts(barcode):
     session.close()
     return True
 
+
 def renameBarcode(barcode, new_barcode):
     if checkBarcode(new_barcode):
         Session = sessionmaker(bind=engine)
@@ -146,6 +152,7 @@ def renameBarcode(barcode, new_barcode):
         return True
     return False
 
+
 def renameProduct(barcode, new_name):
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -155,6 +162,7 @@ def renameProduct(barcode, new_name):
     query.name = new_name
     session.commit()
     session.close()
+
 
 def renamePrice(barcode, new_price):
     Session = sessionmaker(bind=engine)
@@ -166,6 +174,7 @@ def renamePrice(barcode, new_price):
     session.commit()
     session.close()
 
+
 def checkStock(barcode):
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -175,6 +184,7 @@ def checkStock(barcode):
         return False
     data = {"quantity": query.quantity}
     return data
+
 
 def setStock(barcode, amount):
     try:
@@ -191,6 +201,7 @@ def setStock(barcode, amount):
     else:
         return "200"
 
+
 def increaseStock(barcode, increase_amount):
     try:
         Session = sessionmaker(bind=engine)
@@ -205,6 +216,7 @@ def increaseStock(barcode, increase_amount):
         return "500"
     else:
         return "200"
+
 
 def decreaseStock(barcode, decreasing_amount):
     try:
@@ -223,6 +235,7 @@ def decreaseStock(barcode, decreasing_amount):
     else:
         return "200"
 
+
 def productGetAll():
     db = sqlite3.connect("database.db")
     c = db.cursor()
@@ -240,6 +253,7 @@ def productGetAll():
         tempData = {}
 
     return data
+
 
 app = Flask(__name__)
 api = Api(app)
@@ -289,6 +303,7 @@ product_stock_put_args = reqparse.RequestParser()
 product_stock_put_args.add_argument("quantity", type=int, help="Missing quantity", required=True)
 product_stock_put_args.add_argument("operation", type=str, help="Missing operation", required=True)
 
+
 class productStock(Resource):
     def get(self, barcode):
         return checkStock(barcode)
@@ -313,16 +328,19 @@ productEditPutArgs.add_argument("price")
 
 
 class productEdit(Resource):
-    def put(self,barcode):
+    def put(self, barcode):
         args = productEditPutArgs.parse_args()
         if args['barcode'] != [""]:
             renameBarcode(barcode, )
 
+
 api.add_resource(productEdit, "/product/edit/<int:barcode>")
+
 
 class productDelete(Resource):
     def delete(self, barcode):
         productDelete(barcode)
+
 
 api.add_resource(productDelete, "/product/delete/<int:barcode>")
 
@@ -335,6 +353,5 @@ class productAll(Resource):
 api.add_resource(productAll, "/product/all")
 
 if __name__ == "__main__":
-    pass
-    #app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
+    # app.run(host='0.0.0.0',port=8080,debug=True)  # For Replit
     app.run(debug=True)  # For Pycharm
